@@ -1,0 +1,375 @@
+classDiagram
+    class User {
+        +String _id
+        +String email
+        +String passwordHash
+        +String authProvider
+        +String authProviderId
+        +String firstName
+        +String lastName
+        +String phoneNumber
+        +String profilePicture
+        +String defaultCurrency
+        +String preferredLanguage
+        +Date createdAt
+        +Date updatedAt
+        +Date lastLoginAt
+        +String status
+        +String role
+        +Object preferences
+        +register(userData) User
+        +login(credentials) AuthToken
+        +updateProfile(userData) User
+        +getAddresses() Array~Address~
+        +getFavorites() Array~Favorite~
+        +getOrders() Array~Order~
+        +addPaymentMethod(paymentData) PaymentMethod
+    }
+
+    class Address {
+        +String _id
+        +String userId
+        +String addressType
+        +Boolean isDefault
+        +String fullName
+        +String addressLine1
+        +String addressLine2
+        +String city
+        +String state
+        +String postalCode
+        +String country
+        +String phoneNumber
+        +String deliveryInstructions
+        +create(addressData) Address
+        +update(addressData) Address
+        +delete() Boolean
+        +setAsDefault() Address
+    }
+
+    class Category {
+        +String _id
+        +String name
+        +String slug
+        +String description
+        +String parentId
+        +Number level
+        +String imageUrl
+        +Boolean isActive
+        +Number sortOrder
+        +getProducts() Array~Product~
+        +getSubcategories() Array~Category~
+    }
+
+    class Product {
+        +String _id
+        +String sellerId
+        +String name
+        +String slug
+        +String description
+        +String shortDescription
+        +Array~String~ categoryIds
+        +String originLocation
+        +Number price
+        +Number discountPrice
+        +String currency
+        +String sku
+        +String barcode
+        +Number weight
+        +Object dimensions
+        +Number inventoryCount
+        +Boolean allowBackorder
+        +Boolean isActive
+        +Boolean isFeatured
+        +Array~String~ tags
+        +Object attributes
+        +String shippingClass
+        +Array~String~ importRestrictions
+        +Object nutritionalInfo
+        +Date expiryDate
+        +String storageInstructions
+        +Array~String~ certifications
+        +Array~String~ ingredients
+        +Date createdAt
+        +Date updatedAt
+        +getImages() Array~ProductImage~
+        +getReviews() Array~Review~
+        +getAverageRating() Number
+        +getSeller() Seller
+        +getRelatedProducts() Array~Product~
+    }
+
+    class ProductImage {
+        +String _id
+        +String productId
+        +String url
+        +String altText
+        +Boolean isPrimary
+        +Number sortOrder
+    }
+
+    class Seller {
+        +String _id
+        +String userId
+        +String businessName
+        +String description
+        +String logo
+        +String coverPhoto
+        +String contactEmail
+        +String contactPhone
+        +String website
+        +Object socialMedia
+        +Object businessAddress
+        +Boolean isVerified
+        +Number averageRating
+        +Number totalReviews
+        +Object shippingOptions
+        +String returnPolicy
+        +Date createdAt
+        +Date updatedAt
+        +getProducts() Array~Product~
+        +getReviews() Array~Review~
+    }
+
+    class Cart {
+        +String _id
+        +String userId
+        +Array~CartItem~ items
+        +Number subtotal
+        +Number totalShipping
+        +Number totalTax
+        +Number totalPrice
+        +String currency
+        +Array~Coupon~ appliedCoupons
+        +Date createdAt
+        +Date updatedAt
+        +Date expiresAt
+        +addItem(productId, quantity) CartItem
+        +updateItem(itemId, quantity) CartItem
+        +removeItem(itemId) Boolean
+        +applyCoupon(code) Boolean
+        +removeCoupon(code) Boolean
+        +calculateTotals() Cart
+        +createOrder(orderData) Order
+        +clear() Cart
+    }
+
+    class CartItem {
+        +String productId
+        +String productName
+        +String productImage
+        +Number quantity
+        +Number unitPrice
+        +Number totalPrice
+        +Object attributes
+        +String sellerId
+    }
+
+    class Order {
+        +String _id
+        +String orderNumber
+        +String userId
+        +Array~OrderItem~ items
+        +Number subtotal
+        +Object shippingAddress
+        +Object billingAddress
+        +String shippingMethod
+        +Number shippingCost
+        +Number taxAmount
+        +Number importDuties
+        +Number discount
+        +Number totalAmount
+        +String currency
+        +String paymentMethod
+        +String paymentStatus
+        +String fulfillmentStatus
+        +Array~TrackingInfo~ trackingInfo
+        +Date estimatedDelivery
+        +String notes
+        +String giftMessage
+        +Date createdAt
+        +Date updatedAt
+        +create(orderData) Order
+        +updateStatus(status) Order
+        +addTracking(trackingData) Order
+        +getPayment() Payment
+        +cancel() Boolean
+        +generateReceipt() String
+    }
+
+    class OrderItem {
+        +String productId
+        +String productName
+        +String productImage
+        +Number quantity
+        +Number unitPrice
+        +Number totalPrice
+        +Object attributes
+        +String sellerId
+    }
+
+    class TrackingInfo {
+        +String carrier
+        +String trackingNumber
+        +String trackingUrl
+        +Array~TrackingEvent~ events
+        +updateEvents(newEvents) Array~TrackingEvent~
+        +getLatestStatus() TrackingEvent
+    }
+
+    class TrackingEvent {
+        +Date timestamp
+        +String status
+        +String description
+        +String location
+    }
+
+    class Payment {
+        +String _id
+        +String orderId
+        +String userId
+        +String paymentIntentId
+        +Object paymentMethod
+        +Number amount
+        +String currency
+        +String status
+        +String error
+        +String refundStatus
+        +Number refundAmount
+        +Date createdAt
+        +Date updatedAt
+        +processPayment() Boolean
+        +createRefund(amount) Boolean
+    }
+
+    class Review {
+        +String _id
+        +String userId
+        +String productId
+        +String sellerId
+        +String orderId
+        +Number rating
+        +String title
+        +String content
+        +Array~String~ images
+        +Boolean isVerifiedPurchase
+        +Number helpfulCount
+        +Number flags
+        +String status
+        +Date createdAt
+        +Date updatedAt
+        +markHelpful() Number
+        +flag() Number
+    }
+
+    class Favorite {
+        +String _id
+        +String userId
+        +String productId
+        +String sellerId
+        +Date createdAt
+        +create(favoriteData) Favorite
+        +delete() Boolean
+    }
+
+    class Notification {
+        +String _id
+        +String userId
+        +String type
+        +String title
+        +String message
+        +String imageUrl
+        +String link
+        +Boolean isRead
+        +Date createdAt
+        +markAsRead() Notification
+        +delete() Boolean
+    }
+
+    class Promotion {
+        +String _id
+        +String name
+        +String description
+        +String type
+        +Number value
+        +String code
+        +Number minimumPurchase
+        +Date startDate
+        +Date endDate
+        +Number usageLimit
+        +Number usageCount
+        +Array~String~ eligibleProducts
+        +Array~String~ eligibleCategories
+        +Array~String~ eligibleUsers
+        +Boolean isActive
+        +validate(cartData) Boolean
+        +apply(cartData) Object
+    }
+
+    class NotificationService {
+        +sendNotification(userId, data) Boolean
+        +sendPushNotification(userId, data) Boolean
+        +sendEmailNotification(userId, data) Boolean
+        +sendBatchNotifications(userIds, data) Boolean
+        +scheduleNotification(userId, data, time) Boolean
+    }
+
+    class PaymentService {
+        +createPaymentIntent(orderData) Object
+        +processStripePayment(paymentData) Payment
+        +processPayPalPayment(paymentData) Payment
+        +verifyPayment(paymentId) Boolean
+        +processRefund(orderId, amount) Boolean
+    }
+
+    class ShippingService {
+        +getShippingOptions(orderData) Array~ShippingOption~
+        +calculateShippingCost(orderData, option) Number
+        +calculateImportDuties(orderData, destination) Number
+        +createLabel(orderData) Object
+        +trackShipment(trackingData) TrackingInfo
+    }
+
+    class SearchService {
+        +searchProducts(query, filters) Array~Product~
+        +getSuggestions(query) Array~String~
+        +filterProducts(filters) Array~Product~
+        +sortProducts(products, sortBy) Array~Product~
+    }
+
+    class AuthService {
+        +registerUser(userData) User
+        +loginUser(credentials) AuthToken
+        +validateToken(token) Boolean
+        +refreshToken(refreshToken) AuthToken
+        +resetPassword(email) Boolean
+        +changePassword(userId, passwords) Boolean
+        +socialLogin(provider, token) AuthToken
+    }
+
+    User "1" -- "*" Address: has
+    User "1" -- "*" Order: places
+    User "1" -- "*" Review: writes
+    User "1" -- "1" Cart: has
+    User "1" -- "*" Favorite: saves
+    User "1" -- "*" Notification: receives
+    User "1" -- "0..1" Seller: can be
+
+    Product "*" -- "1" Seller: offered by
+    Product "*" -- "*" Category: belongs to
+    Product "1" -- "*" ProductImage: has
+    Product "1" -- "*" Review: receives
+    Product "1" -- "*" Favorite: saved as
+
+    Cart "1" -- "*" CartItem: contains
+    Cart "1" -- "*" Promotion: applies
+
+    Order "1" -- "*" OrderItem: contains
+    Order "1" -- "*" TrackingInfo: has
+    Order "1" -- "1" Payment: processes
+
+    TrackingInfo "1" -- "*" TrackingEvent: contains
+
+    PaymentService -- Payment: creates
+    ShippingService -- TrackingInfo: manages
+    NotificationService -- Notification: sends
+    SearchService -- Product: indexes

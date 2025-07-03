@@ -1,0 +1,185 @@
+sequenceDiagram
+    participant User as User/Mobile App
+    participant API as API Gateway
+    participant Auth as Auth Service
+    participant Product as Product Service
+    participant Cart as Cart Service
+    participant Order as Order Service
+    participant Payment as Payment Service
+    participant Shipping as Shipping Service
+    participant Notification as Notification Service
+    participant DB as Database
+    participant Stripe as Stripe API
+    participant PayPal as PayPal API
+    participant Shippo as Shippo API
+    participant FCM as Firebase Cloud Messaging
+
+    %% User Registration Flow
+    Note over User, Auth: User Registration Flow
+    User->>API: POST /api/v1/auth/register (userData)
+    API->>Auth: registerUser(userData)
+    Auth->>DB: Create User Document
+    DB-->>Auth: Return User Object
+    Auth->>Auth: Generate JWT Token
+    Auth-->>API: Return Auth Tokens + User Data
+    API-->>User: Registration Success Response
+    Auth->>Notification: sendWelcomeNotification(userId)
+    Notification->>FCM: Send Welcome Push Notification
+    FCM-->>User: Receive Welcome Notification
+
+    %% Product Browsing Flow
+    Note over User, Product: Product Browsing Flow
+    User->>API: GET /api/v1/categories
+    API->>Product: getCategories()
+    Product->>DB: Query Categories Collection
+    DB-->>Product: Return Categories
+    Product-->>API: Categories Data
+    API-->>User: Display Categories
+
+    User->>API: GET /api/v1/categories/:id/products
+    API->>Product: getCategoryProducts(categoryId, filters)
+    Product->>DB: Query Products with Filters
+    DB-->>Product: Return Filtered Products
+    Product-->>API: Product List Data
+    API-->>User: Display Products
+
+    User->>API: GET /api/v1/products/:id
+    API->>Product: getProduct(productId)
+    Product->>DB: Query Product Details
+    DB-->>Product: Return Product
+    Product->>DB: Query Product Reviews
+    DB-->>Product: Return Reviews
+    Product->>DB: Query Related Products
+    DB-->>Product: Return Related Products
+    Product-->>API: Complete Product Data
+    API-->>User: Display Product Details
+
+    %% Shopping Cart Flow
+    Note over User, Cart: Shopping Cart Flow
+    User->>API: POST /api/v1/cart/items (productId, quantity)
+    API->>Cart: addToCart(userId, productId, quantity)
+    Cart->>DB: Query Product
+    DB-->>Cart: Return Product Data
+    Cart->>DB: Update Cart
+    DB-->>Cart: Return Updated Cart
+    Cart->>Cart: Calculate Totals
+    Cart-->>API: Updated Cart Data
+    API-->>User: Display Updated Cart
+
+    User->>API: GET /api/v1/cart
+    API->>Cart: getCart(userId)
+    Cart->>DB: Query Cart with Items
+    DB-->>Cart: Return Cart
+    Cart-->>API: Cart Data
+    API-->>User: Display Cart
+
+    %% Checkout Flow
+    Note over User, Order: Checkout Flow
+    User->>API: POST /api/v1/checkout/shipping-options (cartId, destination)
+    API->>Shipping: getShippingOptions(cartItems, destination)
+    Shipping->>Shippo: Calculate Shipping Options
+    Shippo-->>Shipping: Return Available Options
+    Shipping-->>API: Shipping Options
+    API-->>User: Display Shipping Options
+
+    User->>API: POST /api/v1/checkout/calculate-duties (cartId, destination)
+    API->>Shipping: calculateImportDuties(cartItems, destination)
+    Shipping->>Shippo: Calculate Import Duties
+    Shippo-->>Shipping: Return Duty Estimates
+    Shipping-->>API: Import Duty Data
+    API-->>User: Display Import Duties
+
+    User->>API: POST /api/v1/checkout/payment-intent (orderData)
+    API->>Payment: createPaymentIntent(orderData)
+    Payment->>Stripe: Create Payment Intent
+    Stripe-->>Payment: Return Payment Intent
+    Payment-->>API: Payment Intent + Client Secret
+    API-->>User: Display Payment Form
+
+    User->>Stripe: Submit Payment Details
+    Stripe-->>User: Payment Confirmation
+    Stripe->>API: Payment Webhook (event)
+    API->>Payment: processPaymentWebhook(event)
+    Payment->>DB: Update Payment Status
+    DB-->>Payment: Confirm Update
+
+    User->>API: POST /api/v1/orders (cartId, shippingDetails, paymentIntentId)
+    API->>Order: createOrder(userId, cartData, shipping, payment)
+    Order->>DB: Create Order Document
+    DB-->>Order: Return Order
+    Order->>Cart: clearCart(cartId)
+    Order->>Shipping: initiateShipping(orderId)
+    Shipping->>Shippo: Create Shipping Labels
+    Shippo-->>Shipping: Return Tracking Info
+    Shipping->>DB: Update Order with Tracking
+    DB-->>Shipping: Confirm Update
+    Order-->>API: Order Confirmation
+    API-->>User: Display Order Success
+    Order->>Notification: sendOrderConfirmation(userId, orderId)
+    Notification->>FCM: Send Order Confirmation
+    FCM-->>User: Receive Order Notification
+    Notification->>Notification: generateEmail(orderId, 'confirmation')
+    Notification->>User: Email Order Confirmation
+
+    %% Order Tracking Flow
+    Note over User, Shipping: Order Tracking Flow
+    User->>API: GET /api/v1/orders/:id
+    API->>Order: getOrder(orderId)
+    Order->>DB: Query Order
+    DB-->>Order: Return Order
+    Order-->>API: Order Details
+    API-->>User: Display Order
+
+    User->>API: GET /api/v1/orders/:id/tracking
+    API->>Shipping: getTracking(orderId)
+    Shipping->>Shippo: Query Tracking Status
+    Shippo-->>Shipping: Return Tracking Events
+    Shipping->>DB: Update Tracking Events
+    DB-->>Shipping: Confirm Update
+    Shipping-->>API: Tracking Information
+    API-->>User: Display Tracking Details
+
+    %% Shipment Updates (Background Process)
+    Shippo->>API: Tracking Webhook (event)
+    API->>Shipping: processTrackingUpdate(event)
+    Shipping->>DB: Update Order Tracking
+    DB-->>Shipping: Confirm Update
+    Shipping->>Notification: sendTrackingUpdate(userId, trackingEvent)
+    Notification->>FCM: Send Tracking Notification
+    FCM-->>User: Receive Tracking Update
+
+    %% Review Process
+    Note over User, DB: Review Process
+    User->>API: POST /api/v1/products/:id/reviews (reviewData)
+    API->>Product: createReview(userId, productId, reviewData)
+    Product->>DB: Verify Purchase
+    DB-->>Product: Confirm Purchase
+    Product->>DB: Create Review
+    DB-->>Product: Return Review
+    Product->>DB: Update Product Rating
+    DB-->>Product: Confirm Update
+    Product-->>API: Review Confirmation
+    API-->>User: Display Review Success
+
+    %% Notifications Process
+    Note over User, Notification: Notifications Flow
+    User->>API: GET /api/v1/notifications
+    API->>Notification: getNotifications(userId)
+    Notification->>DB: Query Notifications
+    DB-->>Notification: Return Notifications
+    Notification-->>API: Notification List
+    API-->>User: Display Notifications
+
+    User->>API: PUT /api/v1/notifications/:id (read=true)
+    API->>Notification: markAsRead(notificationId)
+    Notification->>DB: Update Notification
+    DB-->>Notification: Confirm Update
+    Notification-->>API: Updated Notification
+    API-->>User: Update UI
+
+    %% Background Promotion Notification
+    Note over Notification, User: Scheduled Promotion
+    Notification->>DB: Find Eligible Users for Promotion
+    DB-->>Notification: Return User List
+    Notification->>FCM: Send Batch Notifications
+    FCM-->>User: Receive Promotion Notification
